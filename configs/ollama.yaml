@@ -1,0 +1,3 @@
+ollama:
+  model: phi2
+  temperature: 0.3

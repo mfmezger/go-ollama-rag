@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
