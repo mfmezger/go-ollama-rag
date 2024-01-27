@@ -22,6 +22,15 @@ func NewGenerator() *Generator {
 	}
 }
 
+func NewEmbedding() *Generator {
+	return &Generator{
+		URL: "http://localhost:11434/api/embedd",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+}
+
 // Generate makes a POST request to the specified URL with the given body.
 func (g *Generator) Generate(body []byte) ([]byte, error) {
 	req, err := http.NewRequest("POST", g.URL, bytes.NewBuffer(body))
