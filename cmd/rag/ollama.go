@@ -57,3 +57,30 @@ func (g *Generator) Generate(body []byte) ([]byte, error) {
 
 	return responseData, nil
 }
+
+// Embed makes a POST request to the specified URL with the given body.
+func (g *Generator) Embed(body []byte) ([]byte, error) {
+	req, err := http.NewRequest("POST", g.URL, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	// Set headers
+	for key, value := range g.Headers {
+		req.Header.Set(key, value)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return responseData, nil
+}
