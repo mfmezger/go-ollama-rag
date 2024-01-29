@@ -15,6 +15,7 @@ func main() {
 	viper.SetConfigType("yaml")    // or viper.SetConfigType("YAML")
 	viper.AddConfigPath("configs") // optionally look for config in the working directory
 	err := viper.ReadInConfig()    // Find and read the config file
+
 	if err != nil {                // Handle errors reading the config file
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}
@@ -33,6 +34,11 @@ func main() {
 	r.HandleFunc("/semantic-search", SemanticSearchHandler).Methods("GET")
 	r.HandleFunc("/qa", QAHandler).Methods("POST")
 
+	// generate a generate request that takes a prompt and returns a response
+	r.HandleFunc("/generate", GenerateHandler).Methods("POST")
+
+
+
 	// Start server
 	log.Fatal(http.ListenAndServe(":8000", r))
 
@@ -45,6 +51,21 @@ func main() {
 	}
 
 	fmt.Println(string(responseData))
+}
+
+// generate a generate request that takes a prompt and returns a response
+func GenerateHandler(w http.ResponseWriter, r *http.Request) {
+
+	// take the prompt from the request body
+	r := mux.Vars(r)
+	// send the prompt to the generator
+	gen := NewGenerator()
+
+	body := []byte(`{"model":"mistral"}`)
+	
+
+	// return the response from the generator
+
 }
 
 func EmbedPDFHandler(w http.ResponseWriter, r *http.Request) {
