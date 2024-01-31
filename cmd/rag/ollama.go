@@ -1,86 +1,52 @@
 package main
 
 import (
-	"bytes"
-	"io"
-	"net/http"
+    "context"
+    "fmt"
+    "log"
+	"github.com/spf13/viper"
+    "github.com/tmc/langchaingo/llms"
+    "github.com/tmc/langchaingo/llms/ollama"
 )
 
-// Generator struct to hold any necessary configuration.
-type Generator struct {
-	URL     string
-	Headers map[string]string
+type Ollama struct {
+    llm         *LLM
+    model       string
+    temperature float64
 }
 
-// NewGenerator creates a new instance of Generator with default settings.
-func NewGenerator() *Generator {
-	return &Generator{
-		URL: "http://localhost:11434/api/generate",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-	}
-}
+func NewOllama() (*Ollama, error) {
 
-func NewEmbedding() *Generator {
-	return &Generator{
-		URL: "http://localhost:11434/api/embedd",
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-	}
-}
+    v := viper.New()
 
-// Generate makes a POST request to the specified URL with the given body.
-func (g *Generator) Generate(body []byte) ([]byte, error) {
-	req, err := http.NewRequest("POST", g.URL, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
+    v.SetConfigName("ollama")  // name of config file (without extension)
+    v.SetConfigType("yaml")    // or viper.SetConfigType("YAML")
+    v.AddConfigPath("configs") // optionally look for config in the working directory
 
-	// Set headers
-	for key, value := range g.Headers {
-		req.Header.Set(key, value)
-	}
+    err := v.ReadInConfig()    // Find and read the config file
+    if err != nil {            // Handle errors reading the config file
+        return nil, err
+    }
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+    // Read configuration
+    model := v.GetString("ollama.model")
+    temperature := v.GetFloat64("ollama.temperature")
 
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+       llm, err := ollama.New(ollama.WithModel(model))
+    if err != nil {
+        log.Fatal(err)
+    }
+    ctx := context.Background()
+    completion, err := llm.Call(ctx, "Human: Who was the first man to walk on the moon?\nAssistant:",
+        llms.WithTemperature(temperature),
+        llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+            fmt.Print(string(chunk))
+            return nil
+        }),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	return responseData, nil
-}
-
-// Embed makes a POST request to the specified URL with the given body.
-func (g *Generator) Embed(body []byte) ([]byte, error) {
-	req, err := http.NewRequest("POST", g.URL, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-
-	// Set headers
-	for key, value := range g.Headers {
-		req.Header.Set(key, value)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseData, nil
+    _ = completion
 }

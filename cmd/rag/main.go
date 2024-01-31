@@ -1,131 +1,143 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
-	"io"
-	"log"
-	"net/http"
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/tmc/langchaingo/llms"
+    "github.com/tmc/langchaingo/llms/ollama"
 )
 
 func main() {
-	viper.SetConfigName("ollama")  // name of config file (without extension)
-	viper.SetConfigType("yaml")    // or viper.SetConfigType("YAML")
-	viper.AddConfigPath("configs") // optionally look for config in the working directory
-	err := viper.ReadInConfig()    // Find and read the config file
+    llm, err := ollama.New(ollama.WithModel("llama2"))
+    if err != nil {
+        log.Fatal(err)
+    }
+    ctx := context.Background()
+    completion, err := llm.Call(ctx, "Human: Who was the first man to walk on the moon?\nAssistant:",
+        llms.WithTemperature(0.8),
+        llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+            fmt.Print(string(chunk))
+            return nil
+        }),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	if err != nil {                // Handle errors reading the config file
-		log.Fatalf("Fatal error config file: %s \n", err)
-	}
-
-	// Read configuration
-	model := viper.GetString("ollama.model")
-	temperature := viper.GetFloat64("ollama.temperature")
-
-	fmt.Printf("Model: %s, Temperature: %f\n", model, temperature)
-
-	r := mux.NewRouter()
-
-	// // Define endpoints
-	r.HandleFunc("/embed-pdf", EmbedPDFHandler).Methods("POST")
-	r.HandleFunc("/embed-text", EmbedTextHandler).Methods("POST")
-	r.HandleFunc("/semantic-search", SemanticSearchHandler).Methods("GET")
-	r.HandleFunc("/qa", QAHandler).Methods("POST")
-
-	// generate a generate request that takes a prompt and returns a response
-	r.HandleFunc("/generate", GenerateHandler).Methods("POST")
-
-
-
-	// Start server
-	log.Fatal(http.ListenAndServe(":8000", r))
-
-	gen := NewGenerator()
-
-	body := []byte(`{"model":"mistral"}`)
-	responseData, err := gen.Generate(body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(responseData))
+    _ = completion
 }
 
-// generate a generate request that takes a prompt and returns a response
-func GenerateHandler(w http.ResponseWriter, r *http.Request) {
+// package main
 
-	// take the prompt from the request body
-	r := mux.Vars(r)
-	// send the prompt to the generator
-	gen := NewGenerator()
+// import (
+// 	"bytes"
+// 	"fmt"
+// 	"github.com/gorilla/mux"
+// 	"github.com/spf13/viper"
+// 	"io"
+// 	"log"
+// 	"net/http"
+// )
 
-	body := []byte(`{"model":"mistral"}`)
-	
 
-	// return the response from the generator
+// // func main() {
+// //     v, err := loadConfig()
+// //     if err != nil {
+// //         log.Fatalf("Fatal error config file: %s \n", err)
+// //     }
 
-}
+// //     model := v.GetString("ollama.model")
+// //     temperature := v.GetFloat64("ollama.temperature")
 
-func EmbedPDFHandler(w http.ResponseWriter, r *http.Request) {
+// //     fmt.Printf("Model: %s, Temperature: %f\n", model, temperature)
 
-}
+// //     r := mux.NewRouter()
 
-func SemanticSearchHandler(w http.ResponseWriter, r *http.Request) {
+// //     r.HandleFunc("/embed-pdf", EmbedPDFHandler).Methods(http.MethodPost)
+// //     r.HandleFunc("/embed-text", EmbedTextHandler).Methods(http.MethodPost)
+// //     r.HandleFunc("/semantic-search", SemanticSearchHandler).Methods(http.MethodGet)
+// //     r.HandleFunc("/qa", QAHandler).Methods(http.MethodPost)
+// //     r.HandleFunc("/generate", GenerateHandler).Methods(http.MethodPost)
 
-}
+// //     log.Fatal(http.ListenAndServe(":8000", r))
+// // }
 
-func QAHandler(w http.ResponseWriter, r *http.Request) {
+// // func loadConfig() (*viper.Viper, error) {
+// //     v := viper.New()
+// //     v.SetConfigName("ollama")
+// //     v.SetConfigType("yaml")
+// //     v.AddConfigPath("configs")
+// //     err := v.ReadInConfig()
+// //     if err != nil {
+// //         return nil, err
+// //     }
+// //     return v, nil
+// // }
 
-}
 
-func EmbedTextHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the multipart form
-	err := r.ParseMultipartForm(10 << 20) // Limit file size to 10MB
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+// // generate a generate request that takes a prompt and returns a response
+// func GenerateHandler(w http.ResponseWriter, r *http.Request) {
+//     gen := NewGenerator()
+//     body := []byte(`{"model":"mistral"}`)
+//     responseData, err := gen.Generate(body)
+//     if err != nil {
+//         http.Error(w, err.Error(), http.StatusInternalServerError)
+//         return
+//     }
+//     w.Write(responseData)
+// }
 
-	// Retrieve the file from form data
-	file, _, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "Error retrieving the file", http.StatusInternalServerError)
-		return
-	}
-	defer file.Close()
+// func EmbedPDFHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Read the file content
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, "Error reading the file", http.StatusInternalServerError)
-		return
-	}
+// }
 
-	// Sent to the Ollama Endpoint
-	apiURL := "http://example.com/api" // Replace with your API URL
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(fileBytes))
-	if err != nil {
-		http.Error(w, "Error creating request to external API", http.StatusInternalServerError)
-		return
-	}
+// func SemanticSearchHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Set appropriate headers, if needed
-	req.Header.Set("Content-Type", "application/text")
+// }
 
-	// Send the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Error sending request to external API", http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
+// func QAHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Optionally, handle the response from the API
-	// ...
+// }
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("File processed and sent to API successfully"))
-}
+// func EmbedTextHandler(w http.ResponseWriter, r *http.Request) {
+//     err := r.ParseMultipartForm(10 << 20)
+//     if err != nil {
+//         http.Error(w, err.Error(), http.StatusBadRequest)
+//         return
+//     }
+
+//     file, _, err := r.FormFile("file")
+//     if err != nil {
+//         http.Error(w, "Error retrieving the file", http.StatusInternalServerError)
+//         return
+//     }
+//     defer file.Close()
+
+//     fileBytes, err := io.ReadAll(file)
+//     if err != nil {
+//         http.Error(w, "Error reading the file", http.StatusInternalServerError)
+//         return
+//     }
+
+//     apiURL := "http://example.com/api"
+//     req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, apiURL, bytes.NewBuffer(fileBytes))
+//     if err != nil {
+//         http.Error(w, "Error creating request to external API", http.StatusInternalServerError)
+//         return
+//     }
+
+//     req.Header.Set("Content-Type", "application/text")
+
+//     client := &http.Client{}
+//     resp, err := client.Do(req)
+//     if err != nil {
+//         http.Error(w, "Error sending request to external API", http.StatusInternalServerError)
+//         return
+//     }
+//     defer resp.Body.Close()
+
+//     w.WriteHeader(http.StatusOK)
+//     w.Write([]byte("File processed and sent to API successfully"))
+// }
