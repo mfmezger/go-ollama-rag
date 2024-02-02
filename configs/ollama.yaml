@@ -1,3 +1,3 @@
-ollama:
+ollama_generation:
   model: stablelm2:zephyr
   temperature: 0.3

@@ -1,8 +1,10 @@
-module rag
+module github.com/mfmezger/go-ollama-rag
 
 go 1.21.6
 
 require (
+	github.com/gorilla/mux v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.2
 	github.com/tmc/langchaingo v0.1.4
 	github.com/weaviate/weaviate v1.23.0
