@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -65,11 +64,9 @@ func GenerateHandler(w http.ResponseWriter, r *http.Request) {
 
 	text := string(content)
 
-	answer := ollama.Generate(ollamaGeneration, modelName, text)
+	ollama.Generate(ollamaGeneration, modelName, text, w, r)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"response": answer})
+	w.Header().Set("Content-Type", "application/x-ndjson")
 }
 
 func EmbedPDFHandler(w http.ResponseWriter, r *http.Request) {
