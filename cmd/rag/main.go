@@ -3,15 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"io"
-    log "github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/mfmezger/go-ollama-rag/internal/ollama"
 	"github.com/spf13/viper"
 )
-
 
 var config *viper.Viper
 
@@ -21,7 +20,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}
-    log.Info("Config loaded successfully!")
+	log.Info("Config loaded successfully!")
 }
 
 func main() {
@@ -36,7 +35,7 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 
-    log.Info("Server started successfully!")
+	log.Info("Server started successfully!")
 }
 
 func loadConfig() (*viper.Viper, error) {
